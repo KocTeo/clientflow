@@ -1,0 +1,25 @@
+{
+  "name": "@clientflow/schemas",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts",
+    "dev": "tsup src/index.ts --format cjs --dts --watch",
+    "lint": "biome check src/",
+    "format": "biome format --write src/"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  }
+}

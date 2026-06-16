@@ -1,0 +1,14 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    "apps/api": {
+      "entry": ["src/main.ts"]
+    },
+    "apps/web": {
+      "entry": ["src/app/**/{page,layout,loading,error,not-found}.tsx"]
+    },
+    "packages/schemas": {
+      "entry": ["src/index.ts"]
+    }
+  }
+}

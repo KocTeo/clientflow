@@ -1,0 +1,28 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+.next/
+.turbo/
+
+# Ambiente
+.env
+.env.local
+apps/api/.env
+apps/web/.env.local
+
+# Cobertura de testes
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Prisma
+apps/api/prisma/migrations/*.sql
+
+# OS
+.DS_Store
+Thumbs.db
