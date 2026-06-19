@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── FUTURE V2: Multi-tenancy ───────────────────────────────────────────────
+// 1. Adicionar: model Organization { id, name, slug, plan, createdAt }
+// 2. Adicionar organizationId em: User, Client, Lead, ServiceOrder, Task
+// 3. Criar OrganizationMiddleware no NestJS que extrai org do JWT
+// 4. Criar PrismaService wrapper que auto-filtra por organizationId
+// 5. Adicionar slug da org como subdomain ou query param na URL
+// ────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id               String   @id @default(uuid(7)) @db.Uuid
+  email            String   @unique
+  name             String
+  passwordHash     String
+  role             Role     @default(MEMBER)
+  refreshTokenHash String? // hash do refresh token (nunca o token em plain text)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  createdClients Client[]       @relation("ClientCreatedBy")
+  assignedLeads  Lead[]         @relation("LeadAssignedTo")
+  serviceOrders  ServiceOrder[] @relation("ServiceOrderAssignedTo")
+  tasks          Task[]         @relation("TaskAssignedTo")
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+model Client {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  document  String? // CPF ou CNPJ
+  address   String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdById String  @db.Uuid
+  createdBy   User   @relation("ClientCreatedBy", fields: [createdById], references: [id])
+
+  serviceOrders ServiceOrder[]
+  leads         Lead[]
+
+  @@map("clients")
+}
+
+model Lead {
+  id        String     @id @default(uuid(7)) @db.Uuid
+  name      String
+  email     String?
+  phone     String?
+  source    LeadSource @default(MANUAL)
+  status    LeadStatus @default(NEW)
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+
+  convertedToId String? @unique @db.Uuid
+  convertedTo   Client? @relation(fields: [convertedToId], references: [id])
+
+  @@map("leads")
+}
+
+enum LeadStatus {
+  NEW // Novo
+  CONTACTED // Contatado
+  QUALIFIED // Qualificado
+  PROPOSAL_SENT // Proposta enviada
+  WON // Ganho — virou cliente
+  LOST // Perdido
+}
+
+enum LeadSource {
+  MANUAL
+  REFERRAL
+  INSTAGRAM
+  WHATSAPP
+  WEBSITE
+  OTHER
+}
+
+model ServiceOrder {
+  id          String             @id @default(uuid(7)) @db.Uuid
+  title       String
+  description String?
+  status      ServiceOrderStatus @default(OPEN)
+  priority    Priority           @default(MEDIUM)
+  dueDate     DateTime?
+  completedAt DateTime?
+  totalValue  Decimal?           @db.Decimal(10, 2)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  clientId String  @db.Uuid
+  client   Client  @relation(fields: [clientId], references: [id])
+
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("ServiceOrderAssignedTo", fields: [assignedToId], references: [id])
+
+  tasks Task[]
+
+  @@map("service_orders")
+}
+
+enum ServiceOrderStatus {
+  OPEN // Aberta
+  IN_PROGRESS // Em andamento
+  WAITING_CLIENT // Aguardando cliente
+  DONE // Concluída
+  CANCELLED // Cancelada
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model Task {
+  id          String     @id @default(uuid(7)) @db.Uuid
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+
+  serviceOrderId String?  @db.Uuid
+  serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
+
+  @@map("tasks")
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}

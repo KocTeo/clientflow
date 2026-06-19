@@ -52,6 +52,12 @@ Foco em gestão de clientes e ordens de serviço.
 7. **Nicho:** prestadores de serviço — gestão de clientes e ordens de serviço.
 8. **packages/schemas:** Opção B (build com tsup). Schemas Zod compilados para `dist/` antes dos apps subirem.
 9. **Nomenclatura de schemas:** `CreateLeadSchema` (objeto Zod) + `CreateLead` (tipo inferido via `z.infer<>`).
+10. **Prisma Client output:** `./generated/prisma` (Prisma v7 default). Import direto via caminho relativo — sem path alias. O `PrismaClient` é importado em apenas um lugar (`prisma.service.ts`), então o custo do alias não se justifica.
+11. **IDs:** `uuid(7) @db.Uuid` em todos os modelos. UUIDv7 é time-ordered e usa o tipo nativo UUID do PostgreSQL (16 bytes). Todos os campos FK também têm `@db.Uuid`.
+12. **assignedToId opcional:** `Task.assignedToId` e `ServiceOrder.assignedToId` são `String? @db.Uuid` — tarefas e OS podem ser criadas sem responsável definido.
+13. **apps/api é ESM:** `"type": "module"` no `package.json` da API. Necessário porque o Prisma v7 gera código ESM nativo. Todos os imports relativos usam extensão `.js`.
+14. **Prisma v7 + adapter:** `PrismaService` usa `@prisma/adapter-pg` com `pg.Pool` para conexão direta ao PostgreSQL. O `datasourceUrl` não é mais suportado no construtor do `PrismaClient` v7.
+15. **NestJS DI + ESM:** nunca usar `import type` em arquivos que fornecem classes para injeção de dependência do NestJS. O `emitDecoratorMetadata` precisa da referência de valor em runtime — `import type` é apagado pelo compilador.
 
 ---
 
@@ -94,24 +100,29 @@ clientflow/
 
 ---
 
-### ⬜ Sprint 1 — Auth
+### 🔄 Sprint 1 — Auth (TDD: unit tests com jest-mock-extended + e2e com banco real)
 
 **Backend (apps/api):**
-- [ ] Instalar dependências: `@nestjs/config`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `bcrypt`, `nestjs-zod`, `@prisma/client`
-- [ ] Instalar devDependencies: `prisma`, `@types/bcrypt`, `@types/passport-jwt`
-- [ ] Configurar `ConfigModule` global no `AppModule`
-- [ ] Configurar `PrismaModule` e `PrismaService`
-- [ ] Rodar `prisma init` e criar schema inicial (User com Role)
+- [x] Instalar dependências: `@nestjs/config`, `@nestjs/jwt`, `@nestjs/passport`, `passport`, `passport-jwt`, `bcrypt`, `nestjs-zod`, `@prisma/client`, `@prisma/adapter-pg`, `pg`
+- [x] Instalar devDependencies: `prisma`, `@types/bcrypt`, `@types/passport-jwt`, `jest-mock-extended`, `dotenv`, `@types/pg`
+- [x] Configurar `ConfigModule` global no `AppModule`
+- [x] Configurar `PrismaModule` e `PrismaService` (com `@prisma/adapter-pg`)
+- [x] Rodar `prisma init`, configurar `prisma.config.ts`, criar schema completo com `uuid(7)`
+- [x] Rodar `prisma migrate dev --name init`
+- [x] Converter `apps/api` para ESM (`"type": "module"`)
+- [ ] **PRÓXIMO:** Configurar Jest para ESM (`extensionsToTreatAsEsm`, `ts-jest useESM: true`)
+- [ ] Criar banco de testes: `CREATE DATABASE clientflow_test;`
+- [ ] Criar `apps/api/.env.test` apontando para `clientflow_test`
 - [ ] Criar `AuthModule` com endpoints: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
 - [ ] Implementar `JwtAccessStrategy` e `JwtRefreshStrategy`
 - [ ] Implementar `JwtAuthGuard` e `RolesGuard`
 - [ ] Criar decorator `@CurrentUser()`
 - [ ] Criar decorator `@Roles()`
-- [ ] Configurar Swagger (`@nestjs/swagger` + `patchNestJsSwagger()` do nestjs-zod)
+- [ ] Configurar Swagger (`@nestjs/swagger` + `cleanupOpenApiDoc()` do nestjs-zod)
 
 **packages/schemas:**
-- [ ] Criar `auth.schema.ts` com `RegisterSchema`, `LoginSchema`
-- [ ] Exportar via `index.ts`
+- [x] Criar `auth.schema.ts` com `RegisterSchema`, `LoginSchema`
+- [x] Exportar via `index.ts`
 
 **Frontend (apps/web):**
 - [ ] Instalar Tailwind CSS + shadcn/ui

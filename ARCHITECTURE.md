@@ -27,7 +27,7 @@ clientflow/
 │   ├── web/                    # Next.js 14 (App Router)
 │   └── api/                    # NestJS
 ├── packages/
-│   └── types/                  # DTOs e types compartilhados (TS puro)
+│   └── schemas/                # Zod schemas compartilhados (build via tsup)
 ├── turbo.json
 ├── package.json
 ├── .env.example
@@ -141,12 +141,14 @@ apps/web/
 
 ```prisma
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "./generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // URL configurada em prisma.config.ts (Prisma v7)
+  // PrismaClient recebe datasourceUrl no construtor
 }
 
 // ─── FUTURE V2: Multi-tenancy ───────────────────────────────────────────────
@@ -158,12 +160,12 @@ datasource db {
 // ────────────────────────────────────────────────────────────────────────────
 
 model User {
-  id               String   @id @default(cuid())
+  id               String   @id @default(uuid(7)) @db.Uuid
   email            String   @unique
   name             String
   passwordHash     String
   role             Role     @default(MEMBER)
-  refreshTokenHash String?  // hash do refresh token (nunca o token em plain text)
+  refreshTokenHash String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -181,18 +183,18 @@ enum Role {
 }
 
 model Client {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid(7)) @db.Uuid
   name      String
   email     String?
   phone     String?
-  document  String?  // CPF ou CNPJ
+  document  String?
   address   String?
   notes     String?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  createdById String
+  createdById String  @db.Uuid
   createdBy   User   @relation("ClientCreatedBy", fields: [createdById], references: [id])
 
   serviceOrders ServiceOrder[]
@@ -202,7 +204,7 @@ model Client {
 }
 
 model Lead {
-  id        String     @id @default(cuid())
+  id        String     @id @default(uuid(7)) @db.Uuid
   name      String
   email     String?
   phone     String?
@@ -212,11 +214,11 @@ model Lead {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  assignedToId  String?
-  assignedTo    User?   @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("LeadAssignedTo", fields: [assignedToId], references: [id])
 
-  convertedToId String?  @unique
-  convertedTo   Client?  @relation(fields: [convertedToId], references: [id])
+  convertedToId String? @unique @db.Uuid
+  convertedTo   Client? @relation(fields: [convertedToId], references: [id])
 
   @@map("leads")
 }
@@ -240,7 +242,7 @@ enum LeadSource {
 }
 
 model ServiceOrder {
-  id          String             @id @default(cuid())
+  id          String             @id @default(uuid(7)) @db.Uuid
   title       String
   description String?
   status      ServiceOrderStatus @default(OPEN)
@@ -251,11 +253,11 @@ model ServiceOrder {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 
-  clientId     String
-  client       Client @relation(fields: [clientId], references: [id])
+  clientId String  @db.Uuid
+  client   Client  @relation(fields: [clientId], references: [id])
 
-  assignedToId String
-  assignedTo   User   @relation("ServiceOrderAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("ServiceOrderAssignedTo", fields: [assignedToId], references: [id])
 
   tasks Task[]
 
@@ -278,19 +280,19 @@ enum Priority {
 }
 
 model Task {
-  id             String     @id @default(cuid())
-  title          String
-  description    String?
-  status         TaskStatus @default(TODO)
-  dueDate        DateTime?
-  completedAt    DateTime?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id          String     @id @default(uuid(7)) @db.Uuid
+  title       String
+  description String?
+  status      TaskStatus @default(TODO)
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
-  assignedToId   String
-  assignedTo     User   @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  assignedToId String?  @db.Uuid
+  assignedTo   User?    @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
 
-  serviceOrderId String?
+  serviceOrderId String?  @db.Uuid
   serviceOrder   ServiceOrder? @relation(fields: [serviceOrderId], references: [id])
 
   @@map("tasks")

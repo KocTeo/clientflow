@@ -11,10 +11,20 @@
     "check": "biome check --write .",
     "knip": "knip"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "bcrypt",
+      "esbuild",
+      "lefthook"
+    ]
+  },
   "devDependencies": {
     "@biomejs/biome": "^2.5.0",
     "knip": "^6.16.1",
     "lefthook": "^2.1.9",
-    "turbo": "^2.9.18"
+    "turbo": "^2.9.18",
+    "typescript": "^5.7.3"
   }
 }
