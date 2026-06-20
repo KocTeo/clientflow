@@ -110,14 +110,19 @@ clientflow/
 - [x] Rodar `prisma init`, configurar `prisma.config.ts`, criar schema completo com `uuid(7)`
 - [x] Rodar `prisma migrate dev --name init`
 - [x] Converter `apps/api` para ESM (`"type": "module"`)
-- [ ] **PRÓXIMO:** Configurar Jest para ESM (`extensionsToTreatAsEsm`, `ts-jest useESM: true`)
-- [ ] Criar banco de testes: `CREATE DATABASE clientflow_test;`
-- [ ] Criar `apps/api/.env.test` apontando para `clientflow_test`
-- [ ] Criar `AuthModule` com endpoints: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
+- [x] Configurar Jest para ESM (`NODE_OPTIONS=--experimental-vm-modules`, `moduleNameMapper` para `.js → .ts`, `ts-jest useESM: true`)
+- [x] Criar banco de testes: `CREATE DATABASE clientflow_test;`
+- [x] Criar `apps/api/.env.test` apontando para `clientflow_test`
+- [x] Rodar `prisma generate`
+- [x] Criar esqueleto do `AuthService` com construtor (`PrismaService`, `JwtService`)
+- [ ] **PRÓXIMO:** Escrever `auth.service.spec.ts` (TDD) — casos: register com email duplicado, register com sucesso, login inválido, login com sucesso, refresh, logout
+- [ ] Implementar `AuthService` (register, login, refresh, logout)
+- [ ] Configurar `AuthModule` com `JwtModule.registerAsync` + `ConfigService`
 - [ ] Implementar `JwtAccessStrategy` e `JwtRefreshStrategy`
 - [ ] Implementar `JwtAuthGuard` e `RolesGuard`
 - [ ] Criar decorator `@CurrentUser()`
 - [ ] Criar decorator `@Roles()`
+- [ ] Criar `AuthController` com endpoints: `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`
 - [ ] Configurar Swagger (`@nestjs/swagger` + `cleanupOpenApiDoc()` do nestjs-zod)
 
 **packages/schemas:**
